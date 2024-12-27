@@ -13,6 +13,7 @@
         "course": "^0.0.1",
         "dotenv": "^16.4.7",
         "express": "^4.21.2",
+        "helmet": "^8.0.0",
         "jsonwebtoken": "^8.5.1",
         "mongoose": "^5.13.23"
     },
@@ -26,6 +27,5 @@
         "backend"
     ],
     "author": "Tu Nombre",
-    "license": "MIT",
-    "proxy": "http://localhost:3000"
+    "license": "MIT"
 }
