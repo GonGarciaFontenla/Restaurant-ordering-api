@@ -1,20 +1,10 @@
 const express = require('express');
 const MenuItem = require('../models/MenuItem');
-const router = express.Router();
-const jwt = require('jsonwebtoken');
+const menuRouter = express.Router();
 
 // Endpoint para crear un nuevo item del menú
-router.post('/', async (req, res) => {
-  // Verificar que el usuario esté autenticado y tenga el rol de admin
-  // const token = req.headers.authorization?.split(' ')[1];
-  // if (!token) return res.status(401).json({ message: 'No token provided' });
-
+menuRouter.post('/', async (req, res) => {
   try {
-  //   const decoded = jwt.verify(token, 'your_jwt_secret');
-  //   if (decoded.role !== 'admin') {
-  //     return res.status(403).json({ message: 'Permission denied' });
-  //   }
-
     const { name, price, description, available } = req.body;
 
     if (typeof available !== 'boolean') {
@@ -30,7 +20,7 @@ router.post('/', async (req, res) => {
 });
 
 // Endpoint para obtener items del menú con paginación
-router.get('/', async (req, res) => {
+menuRouter.get('/', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -53,4 +43,21 @@ router.get('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+// Endpoint para eliminar un item del menú
+menuRouter.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deletedItem = await MenuItem.findByIdAndDelete(id);
+
+    if (!deletedItem) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+
+    res.status(200).json({ message: 'Menu item deleted successfully', item: deletedItem });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete menu item' });
+  }
+});
+
+module.exports = menuRouter;
