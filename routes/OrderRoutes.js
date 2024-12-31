@@ -7,14 +7,14 @@ const OrderRouter = express.Router();
 OrderRouter.post('/createOrder', async (req, res) => {
   const { tableNumber, items } = req.body;
 
-  // Validar que items sea un array de ObjectIds
-  if (!Array.isArray(items)) {
-    return res.status(400).json({ error: 'Items must be an array of ObjectIds' });
+  // Validar que items sea un array de objetos con item y quantity
+  if (!Array.isArray(items) || !items.every(item => item.item && item.quantity)) {
+    return res.status(400).json({ error: 'Items must be an array of objects with item and quantity' });
   }
 
   try {
     // Validar que los IDs en items sean válidos
-    const validItems = await MenuItem.find({ '_id': { $in: items } });
+    const validItems = await MenuItem.find({ '_id': { $in: items.map(i => i.item) } });
     if (validItems.length !== items.length) {
       return res.status(400).json({ error: 'Some items are invalid or do not exist' });
     }
@@ -29,7 +29,7 @@ OrderRouter.post('/createOrder', async (req, res) => {
 
 OrderRouter.get('/getOrder/:id', async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id).populate('items');
+    const order = await Order.findById(req.params.id).populate('items.item');
     if (!order) {
       return res.status(404).json({ error: 'Order not found' }); // Manejo para cuando la orden no existe
     }
@@ -39,22 +39,34 @@ OrderRouter.get('/getOrder/:id', async (req, res) => {
   }
 });
 
-
 // Obtener todas las órdenes
 OrderRouter.get('/getOrders', async (req, res) => {
   try {
-    const orders = await Order.find().populate('items'); // Popula los datos de los ítems
+    const orders = await Order.find().populate('items.item'); // Popula los datos de los ítems
     res.status(200).json(orders);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Actualizar el estado de una orden
-OrderRouter.put('/modifyOrder/:id', async (req, res) => {
-  const { status } = req.body;
+OrderRouter.get('/getOrdersById/:id', async (req, res) => {
   try {
-    const updatedOrder = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true });
+    const orders = await Order.findById(req.params.id).populate('items.item'); // Popula los datos de los ítems
+    res.status(200).json(orders);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}); 
+
+// Ruta para modificar una orden y su estado
+OrderRouter.put('/modifyOrder/:id', async (req, res) => {
+  const { tableNumber, items, status } = req.body;
+  try {
+    const updatedOrder = await Order.findByIdAndUpdate(
+      req.params.id,
+      { tableNumber, items, status },
+      { new: true }
+    ).populate('items.item');
     res.status(200).json({ message: 'Order updated', order: updatedOrder });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -77,7 +89,5 @@ OrderRouter.delete('/deleteOrder/:id', async (req, res) => { // Agregar "/" al i
     res.status(500).json({ error: 'Failed to delete order' });
   }
 });
-
-
 
 module.exports = OrderRouter;
